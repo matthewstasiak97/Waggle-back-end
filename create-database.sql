@@ -1,0 +1,5 @@
+CREATE DATABASE Waggle;
+
+CREATE USER waggle_admin WITH PASSWORD 'waggle';
+
+GRANT ALL PRIVILEGES ON DATABASE Waggle TO waggle_admin;
