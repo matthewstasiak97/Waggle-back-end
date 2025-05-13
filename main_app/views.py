@@ -210,14 +210,8 @@ class ShelterDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "id"
     permission_classes = [permissions.IsAuthenticated]
 
-    def update(self, request, *args, **kwargs):
-        shelter = self.get_object()
-        if shelter.user != request.user:
-            raise PermissionDenied("You do not have permission to update this shelter.")
-        return super().update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        shelter = self.get_object()
-        if shelter.user != request.user:
-            raise PermissionDenied("You do not have permission to delete this shelter.")
-        return super().destroy(request, *args, **kwargs)
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied("You do not have permission to access this shelter.")
+        return obj
