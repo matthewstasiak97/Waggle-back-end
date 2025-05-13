@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import generics, status, permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Shelter, Pet, AdoptionInquiry
 from .serializers import (
@@ -29,6 +30,25 @@ class CreateUserView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         user = User.objects.get(username=response.data["username"])
+
+        # If user selected shelter owner role, create shelter
+        if request.data.get("is_shelter_owner"):
+            shelter_name = request.data.get("shelter_name")
+            shelter_location = request.data.get("shelter_location")
+
+            if not shelter_name or not shelter_location:
+                return Response(
+                    {"error": "Shelter name and location are required."}, status=400
+                )
+
+            Shelter.objects.create(
+                user=user,
+                name=shelter_name,
+                location=shelter_location,
+                email=user.email,
+                phone="",
+            )
+
         refresh = RefreshToken.for_user(user)
         return Response(
             {
@@ -124,7 +144,6 @@ class InquiryListCreate(generics.ListCreateAPIView):
 
 
 class InquiryDetail(generics.RetrieveUpdateDestroyAPIView):
-
     serializer_class = AdoptionInquirySerializer
     lookup_field = "id"
     permission_classes = [permissions.IsAuthenticated]
@@ -132,6 +151,46 @@ class InquiryDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         pet_id = self.kwargs["pet_id"]
         return AdoptionInquiry.objects.filter(pet_id=pet_id)
+
+    def patch(self, request, *args, **kwargs):
+        inquiry = self.get_object()
+        pet = inquiry.pet
+
+        #  Ensure the request user owns the shelter that owns the pet
+        if (
+            not hasattr(request.user, "shelter_profile")
+            or pet.shelter.user != request.user
+        ):
+            return Response(
+                {"detail": "You do not have permission to modify this inquiry."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Proceed with the update
+        new_status = request.data.get("status")
+        if new_status != "Accepted":
+            return super().patch(
+                request, *args, **kwargs
+            )  # Allow other updates normally
+
+        # Accepting the inquiry
+        # Update the inquiry's status to Accepted
+        inquiry.status = "Accepted"
+        inquiry.save()
+
+        # Update the Pet to reflect adoption
+        pet.user = inquiry.user
+        pet.is_adopted = True
+        pet.save()
+
+        # Deny all other pending inquiries for this pet
+        AdoptionInquiry.objects.filter(pet=pet, status="Pending").exclude(
+            id=inquiry.id
+        ).update(status="Denied")
+
+        # Serialize and return the updated inquiry
+        serializer = self.get_serializer(inquiry)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ShelterList(generics.ListCreateAPIView):
@@ -150,3 +209,15 @@ class ShelterDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ShelterSerializer
     lookup_field = "id"
     permission_classes = [permissions.IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        shelter = self.get_object()
+        if shelter.user != request.user:
+            raise PermissionDenied("You do not have permission to update this shelter.")
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        shelter = self.get_object()
+        if shelter.user != request.user:
+            raise PermissionDenied("You do not have permission to delete this shelter.")
+        return super().destroy(request, *args, **kwargs)
