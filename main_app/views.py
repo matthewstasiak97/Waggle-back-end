@@ -26,6 +26,11 @@ class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
+    
+    # def create(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     user = serializer.save()
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
@@ -69,6 +74,7 @@ class LoginView(APIView):
         if not user:
             return Response(
                 {"error": "Invalid credentials"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         refresh = RefreshToken.for_user(user)
