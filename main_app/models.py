@@ -46,7 +46,11 @@ class Pet(models.Model):
 class AdoptionInquiry(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
-    message = models.TextField()
+    full_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
+    address = models.CharField(max_length=255)
+    prior_experience = models.BooleanField()
+    currently_own_pet = models.BooleanField()
     status = models.CharField(
         max_length=20, default="Pending", choices=APOPTION_CHOICES
     )

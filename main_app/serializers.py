@@ -45,3 +45,4 @@ class AdoptionInquirySerializer(serializers.ModelSerializer):
     class Meta:
         model = AdoptionInquiry
         fields = "__all__"
+        read_only_fields = ["status", "created_at"]

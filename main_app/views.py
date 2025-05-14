@@ -26,17 +26,11 @@ class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
-    
-    # def create(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     user = serializer.save()
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         user = User.objects.get(username=response.data["username"])
 
-        # If user selected shelter owner role, create shelter
         if request.data.get("is_shelter_owner"):
             shelter_name = request.data.get("shelter_name")
             shelter_location = request.data.get("shelter_location")
@@ -162,7 +156,6 @@ class InquiryDetail(generics.RetrieveUpdateDestroyAPIView):
         inquiry = self.get_object()
         pet = inquiry.pet
 
-        #  Ensure the request user owns the shelter that owns the pet
         if (
             not hasattr(request.user, "shelter_profile")
             or pet.shelter.user != request.user
