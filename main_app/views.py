@@ -14,6 +14,12 @@ from .serializers import (
     PetSerializer,
 )
 
+def get_user_shelter_data(user):
+    try:
+        shelter = user.shelter_profile  # assuming OneToOneField with related_name='shelter_profile'
+        return ShelterSerializer(shelter).data
+    except Shelter.DoesNotExist:
+        return None
 
 class Home(APIView):
     permission_classes = [permissions.AllowAny]
@@ -26,11 +32,6 @@ class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
-    
-    # def create(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     user = serializer.save()
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
@@ -54,12 +55,14 @@ class CreateUserView(generics.CreateAPIView):
                 phone="",
             )
 
+        shelter_data = get_user_shelter_data(user)
         refresh = RefreshToken.for_user(user)
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": response.data,
+                "shelter": shelter_data
             },
         )
 
@@ -77,12 +80,14 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        shelter_data = get_user_shelter_data(user)
         refresh = RefreshToken.for_user(user)
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": UserSerializer(user).data,
+                "shelter": shelter_data
             }
         )
 
@@ -92,24 +97,34 @@ class VerifyUserView(APIView):
 
     def get(self, request):
         user = request.user
+        shelter_data = get_user_shelter_data(user)
         refresh = RefreshToken.for_user(user)
+        
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": UserSerializer(user).data,
+                "shelter": shelter_data
             }
         )
 
 
 class PetList(generics.ListCreateAPIView):
-    queryset = Pet.objects.all()
+    # queryset = Pet.objects.all()
     serializer_class = PetSerializer
 
     def get_permissions(self):
         if self.request.method == "POST":
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
+    
+    def get_queryset(self):
+        queryset = Pet.objects.all()
+        species = self.request.query_params.get("species")
+        if species:
+            queryset = queryset.filter(species__iexact=species)
+        return queryset
 
     def perform_create(self, serializer):
         try:
