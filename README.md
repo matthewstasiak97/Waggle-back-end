@@ -139,13 +139,3 @@ Wireframes and ERD diagrams were created to visualize key user flows and data mo
 
 ---
 
-## **Contributors**
-
-- [Your Name] - Full Stack Developer
-- [Team Member Names] - Additional Contributors
-
----
-
-## **License**
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
