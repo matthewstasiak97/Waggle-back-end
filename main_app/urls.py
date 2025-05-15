@@ -9,6 +9,7 @@ from .views import (
     ShelterDetail,
     InquiryListCreate,
     InquiryDetail,
+    UserAdoptionsAndInquiries
 )
 
 urlpatterns = [
@@ -29,4 +30,5 @@ urlpatterns = [
     ),
     path("shelters/", ShelterList.as_view(), name="shelter-list"),
     path("shelters/<int:id>/", ShelterDetail.as_view(), name="shelter-detail"),
+    path("user/adoptions/", UserAdoptionsAndInquiries.as_view(), name="user-adoptions"),
 ]
