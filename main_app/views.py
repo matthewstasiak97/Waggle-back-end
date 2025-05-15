@@ -235,3 +235,20 @@ class ShelterDetail(generics.RetrieveUpdateDestroyAPIView):
         if obj.user != self.request.user:
             raise PermissionDenied("You do not have permission to access this shelter.")
         return obj
+
+
+class UserAdoptionsAndInquiries(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        adopted_pets = Pet.objects.filter(user=user)
+        user_inquiries = AdoptionInquiry.objects.filter(user=user)
+
+        adopted_pets_data = PetSerializer(adopted_pets, many=True).data
+        inquiries_data = AdoptionInquirySerializer(user_inquiries, many=True).data
+
+        return Response({
+            "adopted_pets": adopted_pets_data,
+            "inquiries": inquiries_data
+        })
