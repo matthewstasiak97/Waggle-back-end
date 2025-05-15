@@ -144,6 +144,7 @@ class PetDetail(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
+    
 
 
 class InquiryListCreate(generics.ListCreateAPIView):
