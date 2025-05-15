@@ -36,7 +36,7 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Adjust the port if your frontend runs on a different one
     "https://waggle-pets.netlify.app",
-    "http://waggle-pets.netlify.app/",
+    "http://waggle-pets.netlify.app",
 ]
 
 # Application definition
