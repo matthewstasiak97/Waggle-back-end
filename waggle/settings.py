@@ -26,10 +26,17 @@ SECRET_KEY = "django-insecure-%_zy@uclny%0fx35sas_=qlz@gmwk%cn-tqkcss#qyueb*7u-l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "waggle-backend-910d4cca91b5.herokuapp.com",
+    "waggle-pets.netlify.app",
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Adjust the port if your frontend runs on a different one
+    "https://waggle-pets.netlify.app",
+    "http://waggle-pets.netlify.app/",
 ]
 
 # Application definition
