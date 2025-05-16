@@ -1,3 +1,7 @@
+# Waggle
+
+![Logo](image.png)
+
 # **Waggle – Pet Adoption Platform**
 
 ![App Screenshot](./public/Images/Waggle-ERD.png)

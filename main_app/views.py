@@ -14,12 +14,14 @@ from .serializers import (
     PetSerializer,
 )
 
+
 def get_user_shelter_data(user):
     try:
-        shelter = user.shelter_profile  # assuming OneToOneField with related_name='shelter_profile'
+        shelter = user.shelter_profile
         return ShelterSerializer(shelter).data
     except Shelter.DoesNotExist:
         return None
+
 
 class Home(APIView):
     permission_classes = [permissions.AllowAny]
@@ -61,7 +63,7 @@ class CreateUserView(generics.CreateAPIView):
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": response.data,
-                "shelter": shelter_data
+                "shelter": shelter_data,
             },
         )
 
@@ -86,7 +88,7 @@ class LoginView(APIView):
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": UserSerializer(user).data,
-                "shelter": shelter_data
+                "shelter": shelter_data,
             }
         )
 
@@ -98,13 +100,13 @@ class VerifyUserView(APIView):
         user = request.user
         shelter_data = get_user_shelter_data(user)
         refresh = RefreshToken.for_user(user)
-        
+
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": UserSerializer(user).data,
-                "shelter": shelter_data
+                "shelter": shelter_data,
             }
         )
 
@@ -117,7 +119,7 @@ class PetList(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
-    
+
     def get_queryset(self):
         queryset = Pet.objects.all()
         species = self.request.query_params.get("species")
@@ -144,7 +146,6 @@ class PetDetail(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
-    
 
 
 class InquiryListCreate(generics.ListCreateAPIView):
@@ -186,29 +187,20 @@ class InquiryDetail(generics.RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Proceed with the update
         new_status = request.data.get("status")
         if new_status != "Accepted":
-            return super().patch(
-                request, *args, **kwargs
-            )  # Allow other updates normally
+            return super().patch(request, *args, **kwargs)
 
-        # Accepting the inquiry
-        # Update the inquiry's status to Accepted
         inquiry.status = "Accepted"
         inquiry.save()
 
-        # Update the Pet to reflect adoption
         pet.user = inquiry.user
         pet.is_adopted = True
         pet.save()
 
-        # Deny all other pending inquiries for this pet
         AdoptionInquiry.objects.filter(pet=pet, status="Pending").exclude(
             id=inquiry.id
         ).update(status="Denied")
-
-        # Serialize and return the updated inquiry
         serializer = self.get_serializer(inquiry)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -248,7 +240,6 @@ class UserAdoptionsAndInquiries(APIView):
         adopted_pets_data = PetSerializer(adopted_pets, many=True).data
         inquiries_data = AdoptionInquirySerializer(user_inquiries, many=True).data
 
-        return Response({
-            "adopted_pets": adopted_pets_data,
-            "inquiries": inquiries_data
-        })
+        return Response(
+            {"adopted_pets": adopted_pets_data, "inquiries": inquiries_data}
+        )
